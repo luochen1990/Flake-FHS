@@ -42,11 +42,13 @@ in
       # Helper functions
       systemContext' = selfArg: system: rec {
         inherit system inputs utils;
-        pkgs =
-          nixpkgs.legacyPackages.${system} or (import nixpkgs {
+        pkgs = (
+          import nixpkgs {
             inherit system;
             config = nixpkgsConfig;
-          });
+          }
+        );
+        lib = pkgs.lib;
         specialArgs = {
           self = selfArg;
           inherit
@@ -241,33 +243,32 @@ in
 
       lib =
         let
-          # Import system utils directly from individual files
-          systemUtils = {
-            inherit (import ../dict.nix) dict dict' unionFor unionForItems attrItems;
-            inherit (import ../list.nix) for forFilter forWithIndex forItems mapFilter concatMap concatFor powerset cartesianProduct is-empty not-empty;
-            inherit (import ../file.nix) isHidden isNotHidden hasPostfix underDir lsDirsAll lsDirs lsFilesAll lsFiles elemAt findFiles findFilesRec findSubDirsContains subDirsRec isNonEmptyDir;
-            inherit (import ../utils.nix) prepareUtils;
-          };
+          context = systemContext' self "x86_64-linux";
 
-          # Get all utils components and filter out system utils directory
-          allUtilsComponents = discoverComponents' "utils";
-          userUtilsComponents = builtins.filter (comp: comp.name != "utils") allUtilsComponents;
+          # Find actual utils directories (not subdirectories)
+          # This should find utils/ directories directly under each root
+          findUtilsRoots =
+            map (root: {
+              name = "utils";
+              path = root + "/utils";
+            }) (builtins.filter (root: builtins.pathExists (root + "/utils")) roots);
 
-          # Process user utils directories by finding all .nix files and importing them
-          processUserUtilsDir =
+          # Process each utils directory with prepareUtils.more.more
+          processUtilsDir =
             comp:
             let
-              # Use findFiles from systemUtils to find .nix files
-              utilsFiles = systemUtils.findFiles (systemUtils.hasPostfix "nix") comp.path;
-              # Import each file with proper context (just passing lib, as most user utils won't need more)
-              utilsResults = builtins.map (f: import f { inherit lib; }) utilsFiles;
+              utilsResult = (
+                (((import ../utils.nix).prepareUtils comp.path).more { lib = context.lib; }).more {
+                  pkgs = context.pkgs;
+                }
+              );
             in
-            builtins.foldl' (acc: result: acc // result) {} utilsResults;
+            utilsResult;
 
-          # Merge all user utils
-          userUtils = builtins.foldl' (acc: comp: acc // (processUserUtilsDir comp)) {} userUtilsComponents;
+          # Merge all processed utils from all utils directories
+          mergedUtils = builtins.foldl' (acc: comp: acc // (processUtilsDir comp)) { } findUtilsRoots;
         in
-        systemUtils // userUtils;
+        mergedUtils;
 
       templates =
         let
