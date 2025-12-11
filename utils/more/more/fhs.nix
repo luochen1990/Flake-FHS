@@ -4,11 +4,11 @@
 { lib, pkgs }:
 
 let
-  # Import utils preparation system
-  utilsSystem = import ../../utils.nix;
-
+  utils = (((import ../../utils.nix).prepareUtils ./../../../utils).more { inherit lib; }).more {
+    inherit pkgs;
+  };
 in
-rec {
+{
   # Main mkFlake function
   mkFlake =
     {
@@ -33,10 +33,8 @@ rec {
       roots = root;
 
       # Define utils once and reuse throughout
-      basicUtils = utilsSystem.prepareUtils ./../../../utils;
-      utils = basicUtils.more { inherit lib; };
 
-      inherit (basicUtils)
+      inherit (utils)
         unionFor
         dict
         for
@@ -45,13 +43,12 @@ rec {
 
       # Helper functions
       systemContext' = selfArg: system: rec {
-        inherit system inputs;
+        inherit system inputs utils;
         pkgs =
           nixpkgs.legacyPackages.${system} or (import nixpkgs {
             inherit system;
             config = nixpkgsConfig;
           });
-        utils = utils.more { inherit pkgs; };
         specialArgs = {
           self = selfArg;
           inherit
@@ -295,18 +292,16 @@ rec {
       overlays.default =
         final: prev:
         let
-          utilsSystem = import ../../utils.nix;
-          overlayUtils = utilsSystem.prepareUtils ../../...more { lib = final.lib; }.more { pkgs = final; };
           context = {
             pkgs = final;
             inherit (final) lib;
-            tools = overlayUtils;
+            inherit utils;
           };
         in
         buildPackages' context;
 
       # Formatter
-      formatter = eachSystem ({ system, pkgs, ... }: pkgs.nixfmt-tree or pkgs.nixfmt);
+      formatter = eachSystem ({ pkgs, ... }: pkgs.nixfmt-tree);
     };
 
 }
