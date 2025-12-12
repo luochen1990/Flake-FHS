@@ -16,7 +16,7 @@
     flake-fhs.lib.mkFlake {
       inherit self nixpkgs;
       lib = nixpkgs.lib;
-      root = [ ./. ];
+      roots = [ ./. ];
       nixpkgsConfig = {
         allowUnfree = true;
       };

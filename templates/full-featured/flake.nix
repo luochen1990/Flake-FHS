@@ -8,7 +8,7 @@
 
   outputs = { self, nixpkgs, flake-fhs, ... }:
     flake-fhs.mkFlake {
-      root = [ ./. ];
+      roots = [ ./. ];
       supportedSystems = [ "x86_64-linux" "x86_64-darwin" "aarch64-linux" ];
       nixpkgsConfig = {
         allowUnfree = true;

@@ -84,20 +84,28 @@ nix flake check # Run all checks and validations
 Typical flake.nix for users:
 ```nix
 {
-  inputs.fhs.url = "github:luochen1990/flake-fhs";
-  outputs = { fhs, ... }:
-    fhs.mkFlake {
-      ...
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-fhs.url = "github:luochen1990/flake-fhs";
+  };
+
+  outputs = { self, nixpkgs, flake-fhs, ... }:
+    flake-fhs.mkFlake {
+      inherit self nixpkgs;
+      roots = [ ./. ];
     };
 }
 ```
 
 ### Advanced Configuration
 ```nix
-fhs.mkFlake {
-  root = [ ./. ];
+flake-fhs.mkFlake {
+  inherit self nixpkgs;
+  roots = [ ./. ];
   supportedSystems = [ "x86_64-linux" "x86_64-darwin" ];
-  ...
+  nixpkgsConfig = {
+    allowUnfree = true;
+  };
 }
 ```
 

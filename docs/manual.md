@@ -18,7 +18,7 @@ Flake FHS 建立了文件系统到 flake outputs 的直接映射关系：
 | `apps/<name>/default.nix`      | `apps.<system>.<name>`                       | `nix run .#<name>`                 |
 | `shells/<name>.nix` | `devShells.<system>.<name>`                  | `nix develop .#<name>`             |
 | `templates/<name>/`    | `templates.<name>`                           | `nix flake init --template <url>#<name>` |
-| `utils/<name>.nix`      | `lib.<name>`                                 | `nix eval .#lib.<name>`            |
+| `utils/<name>.nix`      | `utils.<name>`                                 | `nix eval .#utils.<name>`            |
 | `checks/<name>.nix` 或 `checks/<path>/default.nix` | `checks.<system>.<name>` (路径 `/` 转为 `-`) | `nix flake check .#<name>`            |
 
 ### ✨ 核心特性
@@ -449,31 +449,6 @@ templates/
             └── options.nix
 ```
 
-### 模板定义示例
-
-```nix
-# templates/simple-python/flake.nix
-{
-  description = "Simple Python project template";
-
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
-  };
-
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-      in
-      {
-        devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [ python3 ];
-        };
-      });
-}
-```
-
 ### 使用方法
 
 ```bash
@@ -482,7 +457,7 @@ nix flake init --template .#simple-python
 nix flake init --template .#rust-cli
 
 # 查看可用模板
-nix flake show --templates
+nix flake show
 ```
 
 ## 🛠️ utils/ - 辅助函数库
@@ -493,56 +468,27 @@ nix flake show --templates
 
 ```
 utils/
-├── utils.nix
-├── builders.nix
-└── helpers.nix
+├── list.nix
+└── file.nix
 ```
 
 ### 函数库示例
 
 ```nix
-# utils/utils.nix
-{ lib }:
-
+# utils/list.nix
 {
-  # 字符串工具
-  strings = {
-    # 驼峰命名转换
-    camelCase = str:
-      let
-        parts = lib.splitString "-" str;
-        capitalize = part:
-          let
-            first = lib.substring 0 1 part;
-            rest = lib.substring 1 (lib.stringLength part - 1) part;
-          in
-          lib.toUpper first + lib.toLower rest;
-      in
-      lib.concatMapStrings (part: capitalize part) parts;
-  };
-
-  # 构建工具
-  builders = {
-    # 简化的包构建器
-    buildPythonApp = { name, src, dependencies ? [] }:
-      { python3, python3Packages, ... }:
-      python3Packages.buildPythonPackage {
-        inherit name src;
-        propagatedBuildInputs = dependencies;
-      };
-  };
+  join = xs: builtins.concatList xs
 }
 ```
 
 ### 使用方法
 
+在 nixosConfigurations.nix 中使用
 ```bash
-# 评估函数
-nix eval .#lib.utils.strings.camelCase --apply 'f: f "hello-world"'
-
-# 在其他文件中使用
-# 在 package.nix 中：
-# utils = import ../../utils { inherit lib; };
+{ utils, ...}:
+{
+  xs = utils.join [[1 2 3] [4 5]];
+}
 ```
 
 ## ✅ checks/ - 检查和测试
@@ -551,13 +497,13 @@ nix eval .#lib.utils.strings.camelCase --apply 'f: f "hello-world"'
 
 ```
 checks/
-├── lint.nix                           → checks.<system>.lint
-├── unit/                              # 命名空间
-│   └── string-utils/                  # checkdir
-│       └── default.nix                → checks.<system>.unit-string-utils
-└── integration/                       # 命名空间
-    └── api-tests/                    # checkdir
-        └── default.nix                → checks.<system>.integration-api-tests
+├── fmt.nix                          → checks.<system>.fmt
+├── unit/                             # namespace
+│   └── string-utils/                 # name
+│       └── default.nix               → checks.<system>."unit/string-utils"
+└── integration/                      # namespace
+    └── api-tests/                    # name
+        └── default.nix               → checks.<system>."integration/api-tests"
 ```
 
 ### 设计规则
@@ -565,20 +511,19 @@ checks/
 - **文件模式**: 顶层 `.nix` 文件（`default.nix` 除外）
 - **目录模式**: 递归查找包含 `default.nix` 的子目录
 - **命名空间**: 不包含 `default.nix` 的目录用于组织
-- **命名规则**: 路径 `/` 转换为 `-` → `unit/string-utils` → `unit-string-utils`
 - **优先级**: 文件优先于目录，避免名称冲突
 
 ### 检查定义示例
 
-`checks/lint.nix`:
+`checks/fmt.nix`:
 ```nix
 { pkgs, lib, ... }:
 
 pkgs.runCommand "lint-check" {
-  nativeBuildInputs = [ pkgs.nixfmt-rfc-style ];
+  nativeBuildInputs = [ pkgs.nixfmt-tree ];
 } ''
-  echo "🔍 Running checks..."
-  find . -name "*.nix" -exec nixfmt {} \;
+  echo "🔍 Running format checks..."
+  treefmt --fail-on-change
   touch $out
 ''
 ```
@@ -634,7 +579,31 @@ Flake FHS 根据 `pkgs/` 目录自动生成 `flake outputs.overlays`，允许在
 
 ## mkFlake 配置项
 
-TODO
+`mkFlake` 函数接受以下配置参数：
+
+### 必需参数
+
+| 参数 | 类型 | 描述 |
+|------|------|------|
+| `self` | attrset | 当前 flake 的引用 |
+| `nixpkgs` | attrset | Nixpkgs 输入 |
+
+### 可选参数
+
+| 参数 | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| `roots` | list | `[ ./. ]` | 项目根目录列表，支持多根项目结构 |
+| `inputs` | attrset | `{ }` | 其他 flake 输入 |
+| `lib` | attrset | `nixpkgs.lib` | Nix 函数库，默认从 nixpkgs.lib 获取 |
+| `supportedSystems` | list | `lib.systems.flakeExposed` | 支持的系统架构列表 |
+| `nixpkgsConfig` | attrset | `{ allowUnfree = true; }` | Nixpkgs 配置选项 |
+
+### 参数说明
+
+- **roots**: 指定项目根目录列表，支持多个根目录，用于大型项目或模块化项目结构
+- **lib**: Nix 函数库，默认值为 `nixpkgs.lib`，通常无需手动指定
+- **supportedSystems**: 默认包含 x86_64-linux, x86_64-darwin, aarch64-linux, aarch64-darwin 等主流架构
+- **nixpkgsConfig**: 全局 Nixpkgs 配置，会影响所有系统上下文中的 pkgs 实例
 
 ## 🔗 最佳实践
 

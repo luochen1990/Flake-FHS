@@ -31,7 +31,7 @@ Flake FHS 提供：
 ├── profiles/   # flake-output.nixosConfigurations
 ├── shells/     # flake-output.devShells
 ├── apps/       # flake-output.apps
-├── utils/      # flake-output.lib (工具函数目录)
+├── utils/      # flake-output.utils (工具函数目录)
 ├── checks/     # flake-output.checks
 └── templates/  # flake-output.templates
 ```
@@ -50,10 +50,16 @@ nix flake init --template github:luochen1990/flake-fhs#full-featured
 
 ```nix
 {
-  inputs.fhs.url = "github:luochen1990/flake-fhs";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    flake-fhs.url = "github:luochen1990/flake-fhs";
+  };
 
-  outputs = { fhs, ... }:
-    fhs.mkFlake { root = [ ./. ]; };
+  outputs = { self, nixpkgs, flake-fhs, ... }:
+    flake-fhs.mkFlake {
+      inherit self nixpkgs;
+      roots = [ ./. ];
+    };
 }
 ```
 

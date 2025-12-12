@@ -9,9 +9,8 @@
       };
     in
     utils.mkFlake {
-      root = [ ./. ];
+      roots = [ ./. ];
       inherit (self) self;
-      lib = nixpkgs.lib;
       nixpkgs = nixpkgs;
       inputs = { };
     };

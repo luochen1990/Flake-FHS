@@ -11,20 +11,19 @@ in
   mkFlake =
     {
       self,
-      lib,
       nixpkgs,
       inputs ? { },
-      root ? [ ./. ],
+      roots ? [ ./. ],
+      lib ? nixpkgs.lib,
       supportedSystems ? lib.systems.flakeExposed,
       nixpkgsConfig ? {
         allowUnfree = true;
       },
     }:
     let
-      roots = root;
+      utils = (((import ../utils.nix).prepareUtils ./../../utils).more { inherit lib; });
 
       # Define utils once and reuse throughout
-
       inherit (utils)
         unionFor
         dict
@@ -243,7 +242,7 @@ in
             let checksPath = root + "/checks";
             in if builtins.pathExists checksPath then
               for (utils.findSubDirsContains checksPath "default.nix") (relativePath: {
-                name = builtins.replaceStrings ["/"] ["-"] relativePath;
+                name = relativePath;
                 path = checksPath + "/${relativePath}";
               })
             else [ ]
