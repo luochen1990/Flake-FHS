@@ -65,11 +65,6 @@ class TemplateValidator:
         except Exception as e:
             return TestResult("github_url", False, f"Error reading template: {e}")
 
-    def _is_sandbox_error(self, error_msg: str) -> bool:
-        """Check if error is expected sandbox restriction."""
-        return ("creating directory '/nix/var/nix/profiles'" in error_msg or
-                "Permission denied" in error_msg)
-
     def _check_flake(self, temp_dir: Path) -> TestResult:
         """Run nix flake check."""
         try:
@@ -78,11 +73,6 @@ class TemplateValidator:
                 return TestResult("flake_check", True, "nix flake check passed")
 
             error_msg = result.stderr.strip()
-            if self._is_sandbox_error(error_msg):
-                return TestResult(
-                    "flake_check", True,
-                    "flake check skipped due to sandbox restrictions (expected in build environment)"
-                )
             return TestResult("flake_check", False, f"nix flake check failed: {error_msg}")
         except Exception as e:
             return TestResult("flake_check", False, f"Error running flake check: {e}")
