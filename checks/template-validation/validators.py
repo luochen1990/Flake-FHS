@@ -179,10 +179,10 @@ def main():
     parser = argparse.ArgumentParser(description="Validate Flake FHS templates")
 
     # Required arguments to avoid path resolution issues
-    parser.add_argument("--templates-dir", type=Path, required=True,
-                       help="Path to templates directory")
-    parser.add_argument("--project-root", type=Path, required=True,
+    parser.add_argument("--project-root", type=Path, default='.',
                        help="Path to project root directory")
+    parser.add_argument("--templates-dir", type=Path, default='./templates',
+                       help="Path to templates directory")
     parser.add_argument("--format", choices=["text", "json"], default="text")
     parser.add_argument("--template", type=str, help="Validate specific template only")
 
