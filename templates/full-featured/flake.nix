@@ -13,7 +13,8 @@
       flake-fhs,
       ...
     }:
-    flake-fhs.mkFlake {
+    flake-fhs.lib.mkFlake {
+      inherit self nixpkgs;
       roots = [ ./. ];
       supportedSystems = [
         "x86_64-linux"

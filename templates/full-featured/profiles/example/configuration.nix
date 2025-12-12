@@ -67,9 +67,9 @@
     ];
   };
 
-  # Use our string utility to create a welcome message
-  environment motd = ''
-    Welcome to ${utils.string.toTitle "flake fhs example"}!
+  # Create a welcome message
+  environment.motd = ''
+    Welcome to Flake FHS Example!
 
     This system is configured using Flake FHS with:
     - Custom service on port ${toString config.services.my-service.port}

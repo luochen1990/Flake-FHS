@@ -13,5 +13,9 @@
       inherit (self) self;
       nixpkgs = nixpkgs;
       inputs = { };
+    } // {
+      # Provide lib and mkFlake outputs for backward compatibility with templates
+      lib = utils;
+      mkFlake = utils.mkFlake;
     };
 }

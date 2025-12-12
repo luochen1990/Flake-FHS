@@ -1,18 +1,13 @@
 {
   stdenv,
   lib,
-  fetchurl,
 }:
 
 stdenv.mkDerivation rec {
   pname = "hello-fhs";
   version = "1.0.0";
 
-  src = fetchurl {
-    url = "https://example.com/hello.tar.gz";
-    sha256 = "sha256-0000000000000000000000000000000000000000000000000000000000000000";
-  };
-
+  # No src needed - we'll create the script directly
   buildInputs = [ ];
 
   phases = [ "installPhase" ];

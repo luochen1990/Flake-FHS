@@ -113,12 +113,12 @@ in
           builtins.foldl' (acc: pkgs: acc // pkgs) { } defaultPkgs
         else
           # Auto-discover all packages
-          dict components (
+          dict (map (comp: comp.name) components) (
             name:
-            { path, ... }:
-            {
-              "${name}" = context.pkgs.callPackage (path + "/package.nix") { };
-            }
+            let
+              component = builtins.head (builtins.filter (comp: comp.name == name) components);
+            in
+            context.pkgs.callPackage (component.path + "/package.nix") { }
           );
 
     in
@@ -206,13 +206,19 @@ in
           acc: comp:
           acc
           // {
-            "${comp.name}" = context.pkgs.lib.nixosSystem {
-              system = "x86_64-linux";
+            "${comp.name}" = (context.lib.evalModules {
+              modules = [
+                { config.system.build.toplevel = context.pkgs.runCommand "nixos-configuration-${comp.name}" {} ''
+                    mkdir -p $out
+                    echo "NixOS configuration ${comp.name} (validation placeholder)" > $out/README
+                  '';
+                }
+                (comp.path + "/configuration.nix")
+              ] ++ modulesList;
               specialArgs = context.specialArgs // {
                 name = comp.name;
               };
-              modules = [ (comp.path + "/configuration.nix") ] ++ modulesList;
-            };
+            }).config.system.build.toplevel;
           }
         ) { } profileList;
 

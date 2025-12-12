@@ -9,6 +9,14 @@
 # the purpose of validating the current development changes.
 { pkgs, lib, ... }:
 
+# Use builtins.path with filter to ensure we get current source with all changes
+let
+  currentSource = builtins.path {
+    path = toString ../../.;
+    # Include all files to capture current changes
+    filter = path: type: true;
+  };
+in
 pkgs.runCommand "templates-validation"
   {
     nativeBuildInputs = [
@@ -20,16 +28,14 @@ pkgs.runCommand "templates-validation"
     set -e
     echo "🧪 Running comprehensive template validation..."
 
-    # Create flake-fhs copy in the build directory (no need for /tmp!)
-    FLAKE_FHS_COPY="$PWD/temp-flake-fhs"
-    cp -r ${../../.} "$FLAKE_FHS_COPY"
-    chmod -R u+rw "$FLAKE_FHS_COPY"
-    echo "Copied flake-fhs to build directory: $FLAKE_FHS_COPY"
+    # Copy current source (includes all uncommitted changes)
+    cp -r ${currentSource} ./source
+    chmod -R u+rw ./source
 
-    # Run Python validator with local path to copied flake-fhs
+    # Run Python validator with current source
     python3 ${./validators.py} \
-      --templates-dir "$FLAKE_FHS_COPY/templates" \
-      --project-root "$FLAKE_FHS_COPY" \
+      --templates-dir ./source/templates \
+      --project-root ./source \
       --format text
 
     echo "✅ Template validation completed!"
