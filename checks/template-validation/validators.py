@@ -145,9 +145,9 @@ class TemplateValidator:
             if temp_dir.exists():
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
-        # Overall result: pass if no critical failures
-        critical_failures = [r for r in results if not r.passed and r.name != "flake_check"]
-        passed = len(critical_failures) == 0
+        # Overall result: pass if no failures (including flake_check)
+        failures = [r for r in results if not r.passed]
+        passed = len(failures) == 0
 
         return ValidationResult(template_name, passed, results)
 
