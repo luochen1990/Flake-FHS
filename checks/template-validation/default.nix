@@ -9,24 +9,29 @@
 # the purpose of validating the current development changes.
 { pkgs, lib, ... }:
 
-pkgs.runCommand "templates-validation" {
-  nativeBuildInputs = [ pkgs.python3 pkgs.nix ];
-} ''
-  set -e
-  echo "🧪 Running comprehensive template validation..."
+pkgs.runCommand "templates-validation"
+  {
+    nativeBuildInputs = [
+      pkgs.python3
+      pkgs.nix
+    ];
+  }
+  ''
+    set -e
+    echo "🧪 Running comprehensive template validation..."
 
-  # Create flake-fhs copy in the build directory (no need for /tmp!)
-  FLAKE_FHS_COPY="$PWD/temp-flake-fhs"
-  cp -r ${../.} "$FLAKE_FHS_COPY"
-  chmod -R u+rw "$FLAKE_FHS_COPY"
-  echo "Copied flake-fhs to build directory: $FLAKE_FHS_COPY"
+    # Create flake-fhs copy in the build directory (no need for /tmp!)
+    FLAKE_FHS_COPY="$PWD/temp-flake-fhs"
+    cp -r ${../.} "$FLAKE_FHS_COPY"
+    chmod -R u+rw "$FLAKE_FHS_COPY"
+    echo "Copied flake-fhs to build directory: $FLAKE_FHS_COPY"
 
-  # Run Python validator with local path to copied flake-fhs
-  python3 ${./validators.py} \
-    --templates-dir "$FLAKE_FHS_COPY/templates" \
-    --project-root "$FLAKE_FHS_COPY" \
-    --format text
+    # Run Python validator with local path to copied flake-fhs
+    python3 ${./validators.py} \
+      --templates-dir "$FLAKE_FHS_COPY/templates" \
+      --project-root "$FLAKE_FHS_COPY" \
+      --format text
 
-  echo "✅ Template validation completed!"
-  touch $out
-''
+    echo "✅ Template validation completed!"
+    touch $out
+  ''

@@ -222,16 +222,25 @@ in
           # 1. File mode: collect top-level .nix files
           fileChecks = concatMap (
             root:
-            let checksPath = root + "/checks";
-            in if builtins.pathExists checksPath then
-              for (utils.lsFiles checksPath) (name:
-                let checkPath = checksPath + "/${name}";
-                in if builtins.match ".*\\.nix$" name != null && name != "default.nix" then {
-                  name = builtins.substring 0 (builtins.stringLength name - 4) name;
-                  path = checkPath;
-                } else null
+            let
+              checksPath = root + "/checks";
+            in
+            if builtins.pathExists checksPath then
+              for (utils.lsFiles checksPath) (
+                name:
+                let
+                  checkPath = checksPath + "/${name}";
+                in
+                if builtins.match ".*\\.nix$" name != null && name != "default.nix" then
+                  {
+                    name = builtins.substring 0 (builtins.stringLength name - 4) name;
+                    path = checkPath;
+                  }
+                else
+                  null
               )
-            else [ ]
+            else
+              [ ]
           ) roots;
 
           validFileChecks = builtins.filter (x: x != null) fileChecks;
@@ -239,13 +248,16 @@ in
           # 2. Directory mode: recursively find all directories containing default.nix
           directoryChecks = concatMap (
             root:
-            let checksPath = root + "/checks";
-            in if builtins.pathExists checksPath then
+            let
+              checksPath = root + "/checks";
+            in
+            if builtins.pathExists checksPath then
               for (utils.findSubDirsContains checksPath "default.nix") (relativePath: {
                 name = relativePath;
                 path = checksPath + "/${relativePath}";
               })
-            else [ ]
+            else
+              [ ]
           ) roots;
 
           # 3. File mode takes precedence over directory mode on name conflicts
@@ -256,10 +268,12 @@ in
             validFileChecks ++ builtins.filter (dir: !(builtins.elem dir.name fileNames)) directoryChecks;
 
         in
-        builtins.listToAttrs (map (item: {
-          name = item.name;
-          value = import item.path context;
-        }) allChecks)
+        builtins.listToAttrs (
+          map (item: {
+            name = item.name;
+            value = import item.path context;
+          }) allChecks
+        )
       );
 
       lib =

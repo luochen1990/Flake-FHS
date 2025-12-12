@@ -12,16 +12,16 @@ in
       lv1 = unionFor (findFiles (hasPostfix "nix") utilsPath) import;
       lv2 =
         args:
-          if isNonEmptyDir (utilsPath + "/more") then
-            unionFor (findFiles (hasPostfix "nix") (utilsPath + "/more")) (fname: import fname args)
-          else
-            {};
+        if isNonEmptyDir (utilsPath + "/more") then
+          unionFor (findFiles (hasPostfix "nix") (utilsPath + "/more")) (fname: import fname args)
+        else
+          { };
       lv3 =
         args:
-          if isNonEmptyDir (utilsPath + "/more/more") then
-            unionFor (findFiles (hasPostfix "nix") (utilsPath + "/more/more")) (fname: import fname args)
-          else
-            {};
+        if isNonEmptyDir (utilsPath + "/more/more") then
+          unionFor (findFiles (hasPostfix "nix") (utilsPath + "/more/more")) (fname: import fname args)
+        else
+          { };
     in
     {
       more =

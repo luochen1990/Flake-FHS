@@ -4,10 +4,12 @@
   # 字符串工具
   strings = {
     # Convert string to camelCase
-    camelCase = str:
+    camelCase =
+      str:
       let
         parts = lib.splitString "-" str;
-        capitalize = part:
+        capitalize =
+          part:
           let
             first = lib.substring 0 1 part;
             rest = lib.substring 1 (lib.stringLength part - 1) part;
