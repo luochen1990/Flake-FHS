@@ -276,7 +276,7 @@ in
         )
       );
 
-      lib =
+      utils =
         let
           context = systemContext' self "x86_64-linux";
 
