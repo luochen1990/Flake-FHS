@@ -7,18 +7,12 @@
 #
 # Do NOT modify this to use GitHub URLs or skip local path testing, as that would defeat
 # the purpose of validating the current development changes.
-{ pkgs, lib, ... }:
+{ self, pkgs, lib, ... }:
 
 # Use builtins.path with filter to ensure we get current source with all changes
-let
-  currentSource = builtins.path {
-    path = toString ../../.;
-    # Include all files to capture current changes
-    filter = path: type: true;
-  };
-in
 pkgs.runCommand "templates-validation"
   {
+    src = self;
     nativeBuildInputs = [
       pkgs.python3
       pkgs.nix
@@ -28,16 +22,8 @@ pkgs.runCommand "templates-validation"
     set -e
     echo "🧪 Running comprehensive template validation..."
 
-    # Copy current source (includes all uncommitted changes)
-    cp -r ${currentSource} ./source
-    chmod -R u+rw ./source
-
     # Run Python validator with current source
-    python3 ${./validators.py} \
-      --templates-dir ./source/templates \
-      --project-root ./source \
-      --format text
-
-    echo "✅ Template validation completed!"
+    cd $src
+    python3 ${./validators.py} --project-root . --templates-dir ./templates --format text
     touch $out
   ''

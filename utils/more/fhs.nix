@@ -4,7 +4,7 @@
 { lib }:
 
 let
-  utils = (((import ../utils.nix).prepareUtils ./../../utils).more { inherit lib; });
+  utils' = (((import ../utils.nix).prepareUtils ./../../utils).more { inherit lib; });
 in
 {
   # Main mkFlake function
@@ -21,10 +21,9 @@ in
       },
     }:
     let
-      utils = (((import ../utils.nix).prepareUtils ./../../utils).more { inherit lib; });
 
       # Define utils once and reuse throughout
-      inherit (utils)
+      inherit (utils')
         unionFor
         dict
         for
@@ -32,18 +31,23 @@ in
         ;
 
       # Helper functions
-      systemContext' = selfArg: system: rec {
-        inherit system inputs utils;
+      systemContext = system: rec {
         pkgs = (
           import nixpkgs {
             inherit system;
             config = nixpkgsConfig;
           }
         );
-        lib = pkgs.lib;
+        utils = utils'.more { pkgs = pkgs; };
+        inherit
+          self
+          system
+          inputs
+          ;
+        lib = nixpkgs.lib;
         specialArgs = {
-          self = selfArg;
           inherit
+            self
             system
             pkgs
             inputs
@@ -58,7 +62,7 @@ in
         dict supportedSystems (
           system:
           let
-            context = systemContext' self system;
+            context = systemContext system;
           in
           f context
         );
@@ -74,7 +78,7 @@ in
               componentPath = root + "/${componentType}";
             in
             if builtins.pathExists componentPath then
-              for (utils.lsDirs componentPath) (name: {
+              for (utils'.lsDirs componentPath) (name: {
                 inherit name root;
                 path = componentPath + "/${name}";
               })
@@ -85,7 +89,7 @@ in
         allComponents;
 
       # Package discovery with optional default.nix control
-      buildPackages' =
+      buildPackages =
         context:
         let
           components = discoverComponents' "pkgs";
@@ -124,7 +128,7 @@ in
     in
     {
       # Generate all flake outputs
-      packages = eachSystem (context: buildPackages' context);
+      packages = eachSystem (context: buildPackages context);
 
       devShells = eachSystem (
         context:
@@ -175,17 +179,13 @@ in
           }
         ) { } componentList
         // {
-          default =
-            let
-              context = systemContext' self "x86_64-linux";
-            in
-            unionFor components ({ name, path, ... }: import path);
+          default = unionFor components ({ path, ... }: import path);
         };
 
       nixosConfigurations =
         let
           components = discoverComponents' "profiles";
-          context = systemContext' self "x86_64-linux";
+          context = systemContext "x86_64-linux";
           modulesList =
             let
               moduleComponents = discoverComponents' "modules";
@@ -206,19 +206,22 @@ in
           acc: comp:
           acc
           // {
-            "${comp.name}" = (context.lib.evalModules {
-              modules = [
-                { config.system.build.toplevel = context.pkgs.runCommand "nixos-configuration-${comp.name}" {} ''
-                    mkdir -p $out
-                    echo "NixOS configuration ${comp.name} (validation placeholder)" > $out/README
-                  '';
-                }
-                (comp.path + "/configuration.nix")
-              ] ++ modulesList;
-              specialArgs = context.specialArgs // {
-                name = comp.name;
-              };
-            }).config.system.build.toplevel;
+            "${comp.name}" =
+              (context.lib.evalModules {
+                modules = [
+                  {
+                    config.system.build.toplevel = context.pkgs.runCommand "nixos-configuration-${comp.name}" { } ''
+                      mkdir -p $out
+                      echo "NixOS configuration ${comp.name} (validation placeholder)" > $out/README
+                    '';
+                  }
+                  (comp.path + "/configuration.nix")
+                ]
+                ++ modulesList;
+                specialArgs = context.specialArgs // {
+                  name = comp.name;
+                };
+              }).config.system.build.toplevel;
           }
         ) { } profileList;
 
@@ -232,7 +235,7 @@ in
               checksPath = root + "/checks";
             in
             if builtins.pathExists checksPath then
-              for (utils.lsFiles checksPath) (
+              for (utils'.lsFiles checksPath) (
                 name:
                 let
                   checkPath = checksPath + "/${name}";
@@ -258,7 +261,7 @@ in
               checksPath = root + "/checks";
             in
             if builtins.pathExists checksPath then
-              for (utils.findSubDirsContains checksPath "default.nix") (relativePath: {
+              for (utils'.findSubDirsContains checksPath "default.nix") (relativePath: {
                 name = relativePath;
                 path = checksPath + "/${relativePath}";
               })
@@ -284,7 +287,7 @@ in
 
       utils =
         let
-          context = systemContext' self "x86_64-linux";
+          context = systemContext "x86_64-linux";
 
           # Find actual utils directories (not subdirectories)
           # This should find utils/ directories directly under each root
@@ -298,7 +301,7 @@ in
             comp:
             let
               utilsResult = (
-                (((import ../utils.nix).prepareUtils comp.path).more { lib = context.lib; }).more {
+                ((utils'.prepareUtils comp.path).more { lib = context.lib; }).more {
                   pkgs = context.pkgs;
                 }
               );
@@ -318,7 +321,7 @@ in
               templatePath = root + "/templates";
             in
             if builtins.pathExists templatePath then
-              for (utils.lsDirs templatePath) (
+              for (utils'.lsDirs templatePath) (
                 name:
                 let
                   fullPath = templatePath + "/${name}";
@@ -349,11 +352,11 @@ in
         let
           context = {
             pkgs = final;
+            utils = utils'.more { pkgs = final; };
             inherit (final) lib;
-            inherit utils;
           };
         in
-        buildPackages' context;
+        buildPackages context;
 
       # Formatter
       formatter = eachSystem ({ pkgs, ... }: pkgs.nixfmt-tree);

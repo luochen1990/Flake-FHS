@@ -10,9 +10,8 @@
     in
     utils.mkFlake {
       roots = [ ./. ];
-      inherit (self) self;
-      nixpkgs = nixpkgs;
-      inputs = { };
+      inherit self nixpkgs;
+      inputs = self.inputs;
     } // {
       # Provide lib and mkFlake outputs for backward compatibility with templates
       lib = utils;
