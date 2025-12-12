@@ -6,7 +6,7 @@
 
 {
   type = "app";
-  program = pkgs.writeShellScriptBin "deploy" ''
+  program = toString (pkgs.writeShellScriptBin "deploy" ''
     set -euo pipefail
 
     # Simple deployment simulation
@@ -36,5 +36,8 @@
     sleep 1
 
     echo "✅ Deployment to $target completed successfully!"
-  '' + "\n";
+  '');
+  meta = {
+    description = "Deployment helper for Flake FHS projects";
+  };
 }

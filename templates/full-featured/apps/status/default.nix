@@ -6,7 +6,7 @@
 
 {
   type = "app";
-  program = pkgs.writeShellScriptBin "status" ''
+  program = toString (pkgs.writeShellScriptBin "status" ''
     set -euo pipefail
 
     echo "📊 Flake FHS Project Status"
@@ -34,6 +34,8 @@
     echo ""
     echo "🖥️  NixOS configurations:"
     echo "  - example: Example system configuration"
-  ''
-  + "\n";
+  '');
+  meta = {
+    description = "Show project status and available components";
+  };
 }
