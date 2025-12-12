@@ -46,8 +46,8 @@ class TemplateValidator:
             "nix",
             "--extra-experimental-features", "nix-command",
             "--extra-experimental-features", "flakes",
-            "--option", "sandbox", "false",
-            "--option", "allow-dirty", "true",
+            #"--option", "sandbox", "false",
+            #"--option", "allow-dirty", "true",
             *cmd
         ]
         return subprocess.run(full_cmd, cwd=cwd, capture_output=True, text=True, timeout=120)
@@ -68,7 +68,7 @@ class TemplateValidator:
     def _check_flake(self, temp_dir: Path) -> TestResult:
         """Run nix flake check."""
         try:
-            result = self._run_nix(["flake", "check", "--no-build", "--quiet"], cwd=temp_dir)
+            result = self._run_nix(["flake", "check", "--no-net", "--quiet"], cwd=temp_dir)
             if result.returncode == 0:
                 return TestResult("flake_check", True, "nix flake check passed")
 
