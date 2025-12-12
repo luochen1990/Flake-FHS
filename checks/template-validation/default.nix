@@ -22,7 +22,7 @@ pkgs.runCommand "templates-validation"
 
     # Create flake-fhs copy in the build directory (no need for /tmp!)
     FLAKE_FHS_COPY="$PWD/temp-flake-fhs"
-    cp -r ${../.} "$FLAKE_FHS_COPY"
+    cp -r ${../../.} "$FLAKE_FHS_COPY"
     chmod -R u+rw "$FLAKE_FHS_COPY"
     echo "Copied flake-fhs to build directory: $FLAKE_FHS_COPY"
 
