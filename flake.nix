@@ -10,6 +10,7 @@
     in
     utils.mkFlake {
       roots = [ ./. ];
+      supportedSystems = [ "x86_64-linux" ];
       inherit self nixpkgs;
       inputs = self.inputs;
     } // {

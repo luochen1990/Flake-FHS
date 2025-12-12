@@ -23,7 +23,6 @@ pkgs.runCommand "templates-validation"
     echo "🧪 Running comprehensive template validation..."
 
     # Run Python validator with current source
-    cd $src
-    python3 ${./validators.py} --project-root . --templates-dir ./templates --format text
+    python3 ${./validators.py} --project-root $src --templates-dir $src/templates --format text
     touch $out
   ''
