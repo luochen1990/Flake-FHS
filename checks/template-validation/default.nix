@@ -13,5 +13,6 @@ pkgs.runCommand "templates-validation"
     echo "🧪 Running comprehensive template validation..."
 
     # Run Python validator with current source
+    export NIX_REMOTE=daemon
     python3 ${./validators.py} --project-root $src --templates-dir $src/templates --format text > $out
   ''

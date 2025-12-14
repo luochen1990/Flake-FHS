@@ -1,4 +1,5 @@
 # the tool functions which is frequently used but not contained in nixpkgs.lib
+{ ... }:
 let
   inherit (builtins)
     map

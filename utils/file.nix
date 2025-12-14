@@ -80,18 +80,20 @@ rec {
       list: builtins.elemAt list index;
 
   # subDirsRec : Path -> ({depth: Int, path: Path, name: String, breadcrumbs: List String} -> {pick: Bool, into: Bool, out: a}) -> [a]
+  # list all sub-directories recursively
   subDirsRec =
-    root: test:
+    root: selector:
     let
       recur =
-        root: test: depth: breadcrumbs:
+        current: depth: breadcrumbs:
         concatMap (
           name:
           #NOTE: assert (builtins.concatStringsSep "/" (breadcrumbs ++ [name]) == path)
           let
-            path = root + ("/" + name);
-            t = test {
+            path = current + ("/" + name);
+            s = selector {
               inherit
+                root
                 depth
                 path
                 name
@@ -99,11 +101,11 @@ rec {
                 ;
             };
           in
-          (if t.pick then [ t.out ] else [ ])
-          ++ (if t.into then (recur path test (depth + 1) (breadcrumbs ++ [ name ])) else [ ])
-        ) (lsDirsAll root);
+          (if s.pick then [ s.out ] else [ ])
+          ++ (if s.into then (recur path (depth + 1) (breadcrumbs ++ [ name ])) else [ ])
+        ) (lsDirsAll current);
     in
-    recur root test 0 [ ];
+    recur root 0 [ ];
 
   # findFiles : (Path -> Bool) -> Path -> [Path]
   findFiles =
@@ -158,16 +160,5 @@ rec {
       (if dirContainsFile p filename then [ dir ] else [ ])
       ++ map (s: "${dir}/${s}") (findSubDirsContains p filename)
     ) (lsDirsAll root);
-
-  # isNonEmptyDir : Path -> Bool
-  # Check if directory exists and is non-empty (contains files, not just empty subdirectories)
-  # Similar to git logic: directories with only empty subdirectories are considered empty
-  isNonEmptyDir =
-    path:
-    let
-      # Find any regular file in the directory recursively
-      foundFiles = findFilesRec (p: true) path; # TODO: 性能优化
-    in
-    builtins.pathExists path && foundFiles != [ ];
 
 }

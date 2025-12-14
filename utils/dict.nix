@@ -1,4 +1,5 @@
 # the tool functions which is frequently used but not contained in nixpkgs.lib
+{ ... }:
 let
   inherit (builtins)
     foldl'
@@ -29,6 +30,10 @@ in
         value = fv k;
       }) ks
     );
+
+  # union : [Dict k v] -> Dict k v
+  #  similar to fold in Haskell
+  union = ds: foldl' (a: b: a // b) { } ds;
 
   # unionFor : [a] -> (a -> Dict k v) -> Dict k v
   #  similar to foldMap in Haskell
