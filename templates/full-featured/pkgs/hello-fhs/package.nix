@@ -13,10 +13,10 @@ stdenv.mkDerivation rec {
   phases = [ "installPhase" ];
 
   installPhase = ''
-    mkdir -p $out/bin
-    echo '#!/bin/sh
-echo "Hello from Flake FHS package ${pname}-${version}!"' > $out/bin/hello-fhs
-    chmod +x $out/bin/hello-fhs
+        mkdir -p $out/bin
+        echo '#!/bin/sh
+    echo "Hello from Flake FHS package ${pname}-${version}!"' > $out/bin/hello-fhs
+        chmod +x $out/bin/hello-fhs
   '';
 
   meta = {

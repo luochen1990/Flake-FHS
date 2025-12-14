@@ -1,6 +1,12 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
-with lib; {
+with lib;
+{
   config = mkIf config.my-service.enable {
     # Create user and group
     users.users.${config.my-service.user} = mkIf (config.my-service.user == "myservice") {
@@ -9,7 +15,7 @@ with lib; {
       description = "My Service daemon user";
     };
 
-    users.groups.${config.my-service.group} = mkIf (config.my-service.group == "myservice") {};
+    users.groups.${config.my-service.group} = mkIf (config.my-service.group == "myservice") { };
 
     # Systemd service configuration
     systemd.services.my-service = {
@@ -40,7 +46,9 @@ with lib; {
     };
 
     # Firewall configuration
-    networking.firewall.allowedTCPPorts = mkIf config.my-service.openFirewall [ config.my-service.port ];
+    networking.firewall.allowedTCPPorts = mkIf config.my-service.openFirewall [
+      config.my-service.port
+    ];
 
     # Add the service package to system packages
     environment.systemPackages = [ config.my-service.package ];

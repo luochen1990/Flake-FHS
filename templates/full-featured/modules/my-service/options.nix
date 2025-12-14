@@ -1,6 +1,7 @@
 { lib, ... }:
 
-with lib; {
+with lib;
+{
   options.my-service = {
     enable = mkEnableOption "My custom service";
 
@@ -37,7 +38,7 @@ with lib; {
 
     environment = mkOption {
       type = types.attrsOf types.str;
-      default = {};
+      default = { };
       example = {
         LOG_LEVEL = "info";
         DATA_DIR = "/var/lib/myservice";

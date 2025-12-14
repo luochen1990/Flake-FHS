@@ -60,7 +60,10 @@
   users.users.demo = {
     isNormalUser = true;
     description = "Demo user";
-    extraGroups = [ "wheel" "networkmanager" ];
+    extraGroups = [
+      "wheel"
+      "networkmanager"
+    ];
     openssh.authorizedKeys.keys = [
       # Add your SSH public keys here
       # "ssh-rsa AAAAB3NzaC1yc2EAAAA..."

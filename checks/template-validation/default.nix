@@ -1,4 +1,9 @@
-{ self, pkgs, lib, ... }:
+{
+  self,
+  pkgs,
+  lib,
+  ...
+}:
 
 pkgs.runCommand "templates-validation"
   {
